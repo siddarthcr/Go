@@ -11,6 +11,7 @@ import (
 )
 
 var total float64
+
 var lines = make(chan string, 10)
 
 func readFile(path string) {
@@ -19,46 +20,57 @@ func readFile(path string) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		lines <- scanner.Text()
+
 	}
 	close(lines)
 	file.Close()
+
 }
 
 func processLine(wg *sync.WaitGroup, m *sync.Mutex) {
 	for line := range lines {
-		fmt.Println(line)
+		//fmt.Println(line)
 		lineSplit := strings.Split(line, ",")
-		salePrice, _ := strconv.ParseFloat(lineSplit[4], 64)
+		salePrice, err := strconv.ParseFloat(lineSplit[4], 64)
+		if err != nil {
+			fmt.Println("error")
+		}
 		m.Lock()
 		total += salePrice
-		fmt.Println(total)
+		fmt.Println("New Total:", total)
 		m.Unlock()
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 	wg.Done()
 }
 
-func workerPool(noOfWorkers int, done chan bool) {
-	var wg sync.WaitGroup
+func workerPool(noOfWorkers int) {
 
+	var wg sync.WaitGroup
 	var m sync.Mutex
 	for i := 0; i < noOfWorkers; i++ {
 		wg.Add(1)
 		go processLine(&wg, &m)
 	}
+
 	wg.Wait()
-	done <- true
 }
 func main() {
+	startTime := time.Now()
 
 	fmt.Println("Processing sales file")
 	path := "sales/file_1.csv"
 
 	go readFile(path)
 
-	noOfWorkers := 1
-	done := make(chan bool)
-	workerPool(noOfWorkers, done)
-	<-done
-	fmt.Println("Total Sales:", total)
+	noOfWorkers := 5
+	fmt.Println("No of workers", noOfWorkers)
+
+	workerPool(noOfWorkers)
+
+	endTime := time.Now()
+	diff := endTime.Sub(startTime)
+
+	fmt.Println("Total time taken", diff.Seconds(), "seconds")
+	fmt.Println("Total Value is", total)
 }
