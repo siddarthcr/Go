@@ -44,7 +44,7 @@ func worker(wg *sync.WaitGroup, m *sync.Mutex) {
 		salePrice, err := strconv.ParseFloat(lineSplit[4], 64)
 		if err == nil {
 			m.Lock()
-			total += salePrice
+			total1 += salePrice
 			m.Unlock()
 		}
 	}
@@ -101,5 +101,5 @@ func mainf() {
 	<-done
 	endTime := time.Now()
 	diff := endTime.Sub(startTime)
-	fmt.Println("total time taken ", diff.Seconds(), "seconds & Total Value is", total)
+	fmt.Println("total time taken ", diff.Seconds(), "seconds & Total Value is", total1)
 }

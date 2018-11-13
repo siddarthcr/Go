@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-var total float64
-
 var lines = make(chan string, 10)
 
 func readFile(path string) {
@@ -27,7 +25,7 @@ func readFile(path string) {
 
 }
 
-func processLine(wg *sync.WaitGroup, m *sync.Mutex) {
+func processLine(wg *sync.WaitGroup, m *sync.Mutex, ledger map[string]float64) {
 	for line := range lines {
 		//fmt.Println(line)
 		lineSplit := strings.Split(line, ",")
@@ -35,42 +33,53 @@ func processLine(wg *sync.WaitGroup, m *sync.Mutex) {
 		if err != nil {
 			fmt.Println("error")
 		}
+		dateString := lineSplit[3]
+		dateString = dateString[0:10]
+		fmt.Println("Reading invoice id:", lineSplit[0])
 		m.Lock()
-		total += salePrice
-		fmt.Println("New Total:", total)
+		currentValue, _ := ledger[dateString]
+		ledger[dateString] = currentValue + salePrice
 		m.Unlock()
 		time.Sleep(1 * time.Second)
 	}
 	wg.Done()
 }
 
-func workerPool(noOfWorkers int) {
+func workerPool(noOfWorkers int, ledger map[string]float64) {
 
 	var wg sync.WaitGroup
 	var m sync.Mutex
+
 	for i := 0; i < noOfWorkers; i++ {
 		wg.Add(1)
-		go processLine(&wg, &m)
+		go processLine(&wg, &m, ledger)
 	}
 
 	wg.Wait()
 }
 func main() {
 	startTime := time.Now()
-
-	fmt.Println("Processing sales file")
-	path := "sales/file_1.csv"
+	fmt.Println("\nProcessing sales file")
+	path := "sales/Chennai.csv"
 
 	go readFile(path)
 
-	noOfWorkers := 5
-	fmt.Println("No of workers", noOfWorkers)
+	ledger := make(map[string]float64)
+	noOfWorkers := 6
 
-	workerPool(noOfWorkers)
+	fmt.Println()
+	fmt.Println("NUM OF WORKERS", noOfWorkers)
+
+	fmt.Println()
+	workerPool(noOfWorkers, ledger)
 
 	endTime := time.Now()
 	diff := endTime.Sub(startTime)
 
-	fmt.Println("Total time taken", diff.Seconds(), "seconds")
-	fmt.Println("Total Value is", total)
+	fmt.Println("\nTotal time taken", diff.Seconds(), "seconds")
+	fmt.Println("\nTotal Sales value by date:")
+	for entryDate, entryValue := range ledger {
+		fmt.Printf("%s Rs.%.2f\n", entryDate, entryValue)
+	}
+	fmt.Println()
 }
