@@ -10,19 +10,22 @@ import (
 	"time"
 )
 
+//Job to assign jobs
 type Job struct {
 	id       int
 	randomno int
 }
+
+//Result to assign results
 type Result struct {
 	text string
 }
 
-var lines = make(chan string, 10)
+var lines1 = make(chan string, 10)
 
 //var results = make(chan Result, 10)
 
-var total float64
+var total1 float64
 
 func digits(number int) int {
 	sum := 0
@@ -85,7 +88,7 @@ func allocate(path string) {
 	//}
 	done <- true
 }*/
-func main() {
+func mainf() {
 	startTime := time.Now()
 	//noOfJobs := 100000
 	path := "sales/file_1.csv"
